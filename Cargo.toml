@@ -1,0 +1,11 @@
+[package]
+
+name = "musical_keyboard"
+version = "0.0.1"
+authors = ["mitchmindtree <mitchell.nordine@gmail.com>"]
+
+[dependencies.pistoncore-input]
+git = "https://github.com/PistonDevelopers/input.git"
+
+[dependencies.pitch_calc]
+git = "https://github.com/RustAudio/pitch_calc.git"
