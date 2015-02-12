@@ -13,5 +13,6 @@ if let Some((letter, octave, amplitude)) = musical_keyboard.handle_input(ctrl, k
 The behaviour is modelled on Logic Studio X's musical keyboard.
 
 `musical_keyboard` uses:
-    - [Piston's `input` crate](https://github.com/PistonDevelopers/input) for the keyboard input.
-    - [pitch_calc](https://github.com/RustAudio/pitch_calc) for it's Letter and Octave types.
+
+- [Piston's `input` crate](https://github.com/PistonDevelopers/input) for the keyboard input.
+- [pitch_calc](https://github.com/RustAudio/pitch_calc) for it's Letter and Octave types.
