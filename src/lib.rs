@@ -6,7 +6,7 @@
 //!
 
 extern crate input;
-extern crate "pitch_calc" as pitch;
+extern crate pitch_calc as pitch;
 
 pub use pitch::{Letter, Octave};
 pub use input::keyboard::Key;
