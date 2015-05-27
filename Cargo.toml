@@ -1,7 +1,7 @@
 [package]
 
 name = "musical_keyboard"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["mitchmindtree <mitchell.nordine@gmail.com>"]
 description = "A small lib for converting keyboard input into musical notes."
 readme = "README.md"
