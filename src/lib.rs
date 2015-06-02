@@ -8,13 +8,13 @@
 extern crate input;
 extern crate pitch_calc as pitch;
 
-pub use pitch::{Letter, Octave};
 pub use input::keyboard::Key;
+pub use pitch::{Letter, Octave};
 
 pub type Velocity = f32;
 
 /// A struct used for creating musical `Note`s via the computer keyboard.
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct MusicalKeyboard {
     /// The current base octave for the keyboard.
     pub octave: Octave,
@@ -22,6 +22,10 @@ pub struct MusicalKeyboard {
     pub velocity: Velocity,
     /// Whether or not the keyboard is currently active.
     pub is_active: bool,
+    /// Is the Ctrl key currently pressed.
+    pub is_ctrl_pressed: bool,
+    /// The currently pressed keys.
+    pub currently_pressed_keys: std::collections::HashMap<Key, Octave>,
 }
 
 /// The event that is returned from 
@@ -39,16 +43,24 @@ impl MusicalKeyboard {
             octave: octave,
             velocity: velocity,
             is_active: is_active,
+            is_ctrl_pressed: false,
+            currently_pressed_keys: std::collections::HashMap::with_capacity(64),
         }
     }
 
     /// Default constructor for MusicalKeyboard.
     pub fn default() -> MusicalKeyboard {
-        MusicalKeyboard {
-            octave: 2,
-            velocity: 1.0,
-            is_active: true,
-        }
+        MusicalKeyboard::new(2, 1.0, true)
+    }
+
+    /// Return a NoteEvent given some pressed key.
+    pub fn key_pressed(&mut self, key: Key) -> Option<NoteEvent> {
+        self.handle_input(key, true)
+    }
+
+    /// Return a NoteEvent given some released key.
+    pub fn key_released(&mut self, key: Key) -> Option<NoteEvent> {
+        self.handle_input(key, false)
     }
 
     /// Handle keyboard input. This will check the given key for the following:
@@ -58,9 +70,20 @@ impl MusicalKeyboard {
     /// - V will step the velocity up.
     /// - Ctrl + K will toggle the keyboard on and off.
     /// - Home-row and some of the top row will trigger notes or release them depending on is_pressed.
-    pub fn handle_input(&mut self, ctrl: bool, key: Key, is_pressed: bool) -> Option<NoteEvent> {
+    pub fn handle_input(&mut self, key: Key, is_pressed: bool) -> Option<NoteEvent> {
         let is_active = self.is_active;
-        match (ctrl, key, is_active, is_pressed) {
+        match (key, is_pressed) {
+            (Key::LCtrl, true)  | (Key::RCtrl, true)  => {
+                self.is_ctrl_pressed = true;
+                return None;
+            },
+            (Key::LCtrl, false) | (Key::RCtrl, false) => {
+                self.is_ctrl_pressed = false;
+                return None;
+            },
+            _ => (),
+        }
+        match (self.is_ctrl_pressed, key, is_active, is_pressed) {
             (true,  Key::K, _   , true)  => self.is_active = self.is_active != true,
             (false, Key::Z, true, true)  => if self.octave > -2 { self.octave -= 1 },
             (false, Key::X, true, true)  => if self.octave < 12 { self.octave += 1 },
@@ -75,7 +98,7 @@ impl MusicalKeyboard {
 
     /// Translates a key into it's respective note.
     /// This key pattern is an attempt at modelling a piano's keys, where Key::A is a piano's C.
-    pub fn maybe_note(&self, key: Key) -> Option<(Letter, Octave)> {
+    pub fn maybe_note(&mut self, key: Key) -> Option<(Letter, Octave)> {
         let (octave, letter): (Octave, Letter) = match key {
             Key::A         => (0, Letter::C),
             Key::W         => (0, Letter::Csh),
@@ -101,13 +124,21 @@ impl MusicalKeyboard {
     }
 
     /// Translates a pressed key to a note on event.
-    pub fn maybe_note_on(&self, key: Key) -> Option<NoteEvent> {
-        self.maybe_note(key).map(|(letter, octave)| NoteEvent::On(letter, octave, self.velocity))
+    pub fn maybe_note_on(&mut self, key: Key) -> Option<NoteEvent> {
+        self.maybe_note(key).map(|(letter, octave)| {
+            self.currently_pressed_keys.insert(key, octave);
+            NoteEvent::On(letter, octave, self.velocity)
+        })
     }
 
     /// Translates a released key to a note off event.
-    pub fn maybe_note_off(&self, key: Key) -> Option<NoteEvent> {
-        self.maybe_note(key).map(|(letter, octave)| NoteEvent::Off(letter, octave))
+    pub fn maybe_note_off(&mut self, key: Key) -> Option<NoteEvent> {
+        self.maybe_note(key).map(|(letter, octave)| {
+            match self.currently_pressed_keys.remove(&key) {
+                None             => NoteEvent::Off(letter, octave),
+                Some(old_octave) => NoteEvent::Off(letter, old_octave),
+            }
+        })
     }
 
 }
