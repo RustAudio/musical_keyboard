@@ -124,10 +124,15 @@ impl MusicalKeyboard {
     }
 
     /// Translates a pressed key to a note on event.
+    ///
+    /// If the given key is already pressed, it is ignored. This helps to avoid triggering notes
+    /// from a window's key-repeat function.
     pub fn maybe_note_on(&mut self, key: Key) -> Option<NoteEvent> {
-        self.maybe_note(key).map(|(letter, octave)| {
-            self.currently_pressed_keys.insert(key, octave);
-            NoteEvent::On(letter, octave, self.velocity)
+        self.maybe_note(key).and_then(|(letter, octave)| {
+            match self.currently_pressed_keys.insert(key, octave) {
+                Some(_existing_note) => None,
+                None => Some(NoteEvent::On(letter, octave, self.velocity)),
+            }
         })
     }
 
