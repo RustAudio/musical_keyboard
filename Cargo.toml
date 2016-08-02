@@ -12,6 +12,6 @@ homepage = "https://github.com/RustAudio/musical_keyboard"
 
 
 [dependencies]
-pistoncore-input = "*"
-pitch_calc = "*"
+pistoncore-input = "0.13"
+pitch_calc = "0.11"
 
