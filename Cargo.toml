@@ -1,7 +1,6 @@
 [package]
-
 name = "musical_keyboard"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["mitchmindtree <mitchell.nordine@gmail.com>"]
 description = "A small lib for converting keyboard input into musical notes."
 readme = "README.md"
@@ -12,6 +11,5 @@ homepage = "https://github.com/RustAudio/musical_keyboard"
 
 
 [dependencies]
-pistoncore-input = "0.13"
+pistoncore-input = "0.14"
 pitch_calc = "0.11"
-
