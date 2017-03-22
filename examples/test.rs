@@ -1,4 +1,3 @@
-
 extern crate musical_keyboard;
 
 use musical_keyboard::{Letter, MusicalKeyboard, NoteEvent, Key};

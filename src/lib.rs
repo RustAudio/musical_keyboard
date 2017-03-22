@@ -1,10 +1,3 @@
-//!
-//!  musical_keyboard.rs
-//!
-//!  Created by Mitchell Nordine at 01:43PM on October 15, 2014.
-//!
-//!
-
 extern crate pitch_calc as pitch;
 
 pub use pitch::{Letter, Octave};
@@ -22,11 +15,24 @@ pub struct MusicalKeyboard {
     pub currently_pressed_keys: std::collections::HashMap<Key, Octave>,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct NoteOn {
+    pub letter: Letter,
+    pub octave: Octave,
+    pub velocity: Velocity,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct NoteOff {
+    pub letter: Letter,
+    pub octave: Octave,
+}
+
 /// The event that is returned from 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum NoteEvent {
-    On(Letter, Octave, Velocity),
-    Off(Letter, Octave),
+    On(NoteOn),
+    Off(NoteOff),
 }
 
 /// Keys accepted by the keyboard.
@@ -101,8 +107,8 @@ impl MusicalKeyboard {
             (Key::X, true)  => if self.octave < 12 { self.octave += 1 },
             (Key::C, true)  => if self.velocity > 0.0 { self.velocity -= 0.05 },
             (Key::V, true)  => if self.velocity < 1.0 { self.velocity += 0.05 },
-            (_,      true)  => return self.maybe_note_on(key),
-            (_,      false) => return self.maybe_note_off(key),
+            (_,      true)  => return self.maybe_note_on(key).map(NoteEvent::On),
+            (_,      false) => return self.maybe_note_off(key).map(NoteEvent::Off),
         }
         None
     }
@@ -138,21 +144,25 @@ impl MusicalKeyboard {
     ///
     /// If the given key is already pressed, it is ignored. This helps to avoid triggering notes
     /// from a window's key-repeat function.
-    pub fn maybe_note_on(&mut self, key: Key) -> Option<NoteEvent> {
+    pub fn maybe_note_on(&mut self, key: Key) -> Option<NoteOn> {
         self.maybe_note(key).and_then(|(letter, octave)| {
             match self.currently_pressed_keys.insert(key, octave) {
                 Some(_existing_note) => None,
-                None => Some(NoteEvent::On(letter, octave, self.velocity)),
+                None => Some(NoteOn {
+                    letter: letter,
+                    octave: octave,
+                    velocity: self.velocity,
+                }),
             }
         })
     }
 
     /// Translates a released key to a note off event.
-    pub fn maybe_note_off(&mut self, key: Key) -> Option<NoteEvent> {
+    pub fn maybe_note_off(&mut self, key: Key) -> Option<NoteOff> {
         self.maybe_note(key).map(|(letter, octave)| {
             match self.currently_pressed_keys.remove(&key) {
-                None             => NoteEvent::Off(letter, octave),
-                Some(old_octave) => NoteEvent::Off(letter, old_octave),
+                None             => NoteOff { letter: letter, octave: octave },
+                Some(old_octave) => NoteOff { letter: letter, octave: old_octave },
             }
         })
     }
