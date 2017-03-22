@@ -5,10 +5,8 @@
 //!
 //!
 
-extern crate input;
 extern crate pitch_calc as pitch;
 
-pub use input::keyboard::Key;
 pub use pitch::{Letter, Octave};
 
 pub type Velocity = f32;
@@ -20,10 +18,6 @@ pub struct MusicalKeyboard {
     pub octave: Octave,
     /// The current velocity for the generated notes.
     pub velocity: Velocity,
-    /// Whether or not the keyboard is currently active.
-    pub is_active: bool,
-    /// Is the Ctrl key currently pressed.
-    pub is_ctrl_pressed: bool,
     /// The currently pressed keys.
     pub currently_pressed_keys: std::collections::HashMap<Key, Octave>,
 }
@@ -35,22 +29,53 @@ pub enum NoteEvent {
     Off(Letter, Octave),
 }
 
+/// Keys accepted by the keyboard.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum Key {
+    // Keys associated with `Note`s.
+    A,
+    W,
+    S,
+    E,
+    D,
+    F,
+    T,
+    G,
+    Y,
+    H,
+    U,
+    J,
+    K,
+    O,
+    L,
+    P,
+    Semicolon,
+    Quote,
+
+    // Octave.
+    Z,
+    X,
+
+    // Velocity.
+    C,
+    V,
+}
+
+impl Default for MusicalKeyboard {
+    fn default() -> Self {
+        MusicalKeyboard::new(2, 1.0)
+    }
+}
+
 impl MusicalKeyboard {
 
     /// Constructor for MusicalKeyboard.
-    pub fn new(octave: Octave, velocity: Velocity, is_active: bool) -> MusicalKeyboard {
+    pub fn new(octave: Octave, velocity: Velocity) -> Self {
         MusicalKeyboard {
             octave: octave,
             velocity: velocity,
-            is_active: is_active,
-            is_ctrl_pressed: false,
-            currently_pressed_keys: std::collections::HashMap::with_capacity(64),
+            currently_pressed_keys: std::collections::HashMap::new(),
         }
-    }
-
-    /// Default constructor for MusicalKeyboard.
-    pub fn default() -> MusicalKeyboard {
-        MusicalKeyboard::new(2, 1.0, true)
     }
 
     /// Return a NoteEvent given some pressed key.
@@ -71,27 +96,13 @@ impl MusicalKeyboard {
     /// - Ctrl + K will toggle the keyboard on and off.
     /// - Home-row and some of the top row will trigger notes or release them depending on is_pressed.
     pub fn handle_input(&mut self, key: Key, is_pressed: bool) -> Option<NoteEvent> {
-        let is_active = self.is_active;
         match (key, is_pressed) {
-            (Key::LCtrl, true)  | (Key::RCtrl, true)  => {
-                self.is_ctrl_pressed = true;
-                return None;
-            },
-            (Key::LCtrl, false) | (Key::RCtrl, false) => {
-                self.is_ctrl_pressed = false;
-                return None;
-            },
-            _ => (),
-        }
-        match (self.is_ctrl_pressed, key, is_active, is_pressed) {
-            (true,  Key::K, _   , true)  => self.is_active = self.is_active != true,
-            (false, Key::Z, true, true)  => if self.octave > -2 { self.octave -= 1 },
-            (false, Key::X, true, true)  => if self.octave < 12 { self.octave += 1 },
-            (false, Key::C, true, true)  => if self.velocity > 0.0 { self.velocity -= 0.05 },
-            (false, Key::V, true, true)  => if self.velocity < 1.0 { self.velocity += 0.05 },
-            (false, _,      true, true)  => return self.maybe_note_on(key),
-            (false, _,      true, false) => return self.maybe_note_off(key),
-            _ => (),
+            (Key::Z, true)  => if self.octave > -2 { self.octave -= 1 },
+            (Key::X, true)  => if self.octave < 12 { self.octave += 1 },
+            (Key::C, true)  => if self.velocity > 0.0 { self.velocity -= 0.05 },
+            (Key::V, true)  => if self.velocity < 1.0 { self.velocity += 0.05 },
+            (_,      true)  => return self.maybe_note_on(key),
+            (_,      false) => return self.maybe_note_off(key),
         }
         None
     }
@@ -145,6 +156,4 @@ impl MusicalKeyboard {
             }
         })
     }
-
 }
-
