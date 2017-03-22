@@ -73,6 +73,18 @@ impl Default for MusicalKeyboard {
     }
 }
 
+impl From<NoteOn> for NoteEvent {
+    fn from(on: NoteOn) -> Self {
+        NoteEvent::On(on)
+    }
+}
+
+impl From<NoteOff> for NoteEvent {
+    fn from(off: NoteOff) -> Self {
+        NoteEvent::Off(off)
+    }
+}
+
 impl MusicalKeyboard {
 
     /// Constructor for MusicalKeyboard.
@@ -84,33 +96,27 @@ impl MusicalKeyboard {
         }
     }
 
-    /// Return a NoteEvent given some pressed key.
-    pub fn key_pressed(&mut self, key: Key) -> Option<NoteEvent> {
-        self.handle_input(key, true)
-    }
-
-    /// Return a NoteEvent given some released key.
-    pub fn key_released(&mut self, key: Key) -> Option<NoteEvent> {
-        self.handle_input(key, false)
-    }
-
-    /// Handle keyboard input. This will check the given key for the following:
+    /// Return a NoteOn given some pressed key.
+    ///
     /// - Z will step the octave down.
     /// - X will step the octave up.
     /// - C will step the velocity down.
     /// - V will step the velocity up.
-    /// - Ctrl + K will toggle the keyboard on and off.
     /// - Home-row and some of the top row will trigger notes or release them depending on is_pressed.
-    pub fn handle_input(&mut self, key: Key, is_pressed: bool) -> Option<NoteEvent> {
-        match (key, is_pressed) {
-            (Key::Z, true)  => if self.octave > -2 { self.octave -= 1 },
-            (Key::X, true)  => if self.octave < 12 { self.octave += 1 },
-            (Key::C, true)  => if self.velocity > 0.0 { self.velocity -= 0.05 },
-            (Key::V, true)  => if self.velocity < 1.0 { self.velocity += 0.05 },
-            (_,      true)  => return self.maybe_note_on(key).map(NoteEvent::On),
-            (_,      false) => return self.maybe_note_off(key).map(NoteEvent::Off),
+    pub fn key_pressed(&mut self, key: Key) -> Option<NoteOn> {
+        match key {
+            Key::Z => if self.octave > -2 { self.octave -= 1 },
+            Key::X => if self.octave < 12 { self.octave += 1 },
+            Key::C => if self.velocity > 0.0 { self.velocity -= 0.05 },
+            Key::V => if self.velocity < 1.0 { self.velocity += 0.05 },
+            other => return self.maybe_note_on(other),
         }
         None
+    }
+
+    /// Return a NoteOff given some released key.
+    pub fn key_released(&mut self, key: Key) -> Option<NoteOff> {
+        self.maybe_note_off(key)
     }
 
     /// Translates a key into it's respective note.

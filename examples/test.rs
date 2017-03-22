@@ -1,22 +1,21 @@
 extern crate musical_keyboard;
 
-use musical_keyboard::{Letter, MusicalKeyboard, NoteEvent, Key};
+use musical_keyboard::{Letter, MusicalKeyboard, NoteOn, NoteOff, Key};
 
 fn main() {
     let mut musical_keyboard = MusicalKeyboard::default();
 
-    let event = musical_keyboard.key_pressed(Key::A);
-    assert_eq!(Some(NoteEvent::On(Letter::C, 2, 1.0)), event);
+    let on = musical_keyboard.key_pressed(Key::A);
+    assert_eq!(Some(NoteOn { letter: Letter::C, octave: 2, velocity: 1.0 }), on);
 
-    musical_keyboard.handle_input(Key::X, true);
-    let event = musical_keyboard.key_pressed(Key::D);
-    assert_eq!(Some(NoteEvent::On(Letter::E, 3, 1.0)), event);
+    musical_keyboard.key_pressed(Key::X);
+    let on = musical_keyboard.key_pressed(Key::D);
+    assert_eq!(Some(NoteOn { letter: Letter::E, octave: 3, velocity: 1.0 }), on);
 
-    let event = musical_keyboard.key_released(Key::D);
-    assert_eq!(Some(NoteEvent::Off(Letter::E, 3)), event);
+    let off = musical_keyboard.key_released(Key::D);
+    assert_eq!(Some(NoteOff { letter: Letter::E, octave: 3 }), off);
 
-    musical_keyboard.handle_input(Key::C, true);
-    let event = musical_keyboard.key_pressed(Key::Semicolon);
-    assert_eq!(Some(NoteEvent::On(Letter::E, 4, 0.95)), event);
+    musical_keyboard.key_pressed(Key::C);
+    let on = musical_keyboard.key_pressed(Key::Semicolon);
+    assert_eq!(Some(NoteOn { letter: Letter::E, octave: 4, velocity: 0.95 }), on);
 }
-
